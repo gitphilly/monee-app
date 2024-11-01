@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Modal } from '../Dashboard.utils';
+import { Modal } from '../../Dashboard.utils'; // Fixed path - goes up two levels
 
 const SettingsModal = ({ isOpen, onClose, targetPercentages, onSave }) => {
   const [percentages, setPercentages] = useState(targetPercentages);

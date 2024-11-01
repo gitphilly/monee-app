@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-import { ScenarioModal } from './ScenarioModal';
+import ScenarioModal from './ScenarioModal'; // This points to ScenarioModal/index.js
 import { Modal, EntryForm, ProgressBar } from './Dashboard.utils';
-import { EntryDisplay } from './components/EntryDisplay';
-import { SettingsModal } from './components/SettingsModal';
+import EntryDisplay from './components/EntryDisplay'; // This points to components/EntryDisplay/index.js
+import SettingsModal from './components/SettingsModal'; // This points to components/SettingsModal/index.js
 import { getMonthYear, getWeekNumber } from '../../utils/dates';
 import { scenarioService } from '../../services/scenarioService';
 

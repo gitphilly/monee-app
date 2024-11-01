@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { formatDate } from '../../../utils/dates';
+import PropTypes from 'prop-types';
+import { formatDate } from '../../../../utils/dates'; // Updated path
 
 const EntryDisplay = ({ entry, onDelete }) => {
   const [showDetails, setShowDetails] = useState(false);
@@ -111,20 +112,20 @@ const EntryDisplay = ({ entry, onDelete }) => {
 
 // Prop Types for better development experience
 EntryDisplay.propTypes = {
-  entry: PropTypes.shape({
-    id: PropTypes.number.isRequired,
-    name: PropTypes.string.isRequired,
-    value: PropTypes.number.isRequired,
-    originalValue: PropTypes.number,
-    date: PropTypes.string.isRequired,
-    frequency: PropTypes.oneOf(['once', 'weekly', 'fortnightly', 'monthly']).isRequired,
-    valueBreakdown: PropTypes.shape({
-      weekly: PropTypes.number,
-      fortnightly: PropTypes.number,
-      monthly: PropTypes.number
-    })
-  }).isRequired,
-  onDelete: PropTypes.func.isRequired
+    entry: PropTypes.shape({
+      id: PropTypes.number.isRequired,
+      name: PropTypes.string.isRequired,
+      value: PropTypes.number.isRequired,
+      originalValue: PropTypes.number,
+      date: PropTypes.string.isRequired,
+      frequency: PropTypes.oneOf(['once', 'weekly', 'fortnightly', 'monthly']).isRequired,
+      valueBreakdown: PropTypes.shape({
+        weekly: PropTypes.number,
+        fortnightly: PropTypes.number,
+        monthly: PropTypes.number
+      })
+    }).isRequired,
+    onDelete: PropTypes.func.isRequired
 };
 
 export default EntryDisplay;
