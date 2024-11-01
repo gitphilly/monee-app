@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import { TEXT } from '../../constants/text';
+
 
 // Calculate frequency values
 const calculateFrequencyValues = (amount, frequency) => {
@@ -145,12 +147,12 @@ export const EntryForm = ({ category, onSubmit, onClose }) => {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <h2 className="text-xl font-bold mb-4 capitalize">
-          Add {category} Entry
+        {TEXT.ENTRY_FORM.TITLE_PREFIX} {category}
         </h2>
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description
+            {TEXT.ENTRY_FORM.LABELS.DESCRIPTION}
             </label>
             <input
               type="text"

@@ -5,6 +5,7 @@ import { Modal, EntryForm, ProgressBar } from './Dashboard.utils';
 import EntryDisplay from './components/EntryDisplay';
 import SettingsModal from './components/SettingsModal';
 import { scenarioStorage } from '../../services/scenarioStorage';
+import { TEXT } from '../../constants/text';
 
 const Dashboard = () => {
   // Load initial state from localStorage
@@ -177,19 +178,19 @@ const Dashboard = () => {
     <div className="p-4 max-w-6xl mx-auto">
       {/* Header Section */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">MonEee Dashboard</h1>
+        <h1 className="text-3xl font-bold">{TEXT.DASHBOARD.MAIN_TITLE}</h1>
         <div className="space-x-2">
           <button
             onClick={() => setScenarioModalOpen(true)}
             className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600"
           >
-            Scenarios
+            {TEXT.DASHBOARD.BUTTONS.SCENARIOS}
           </button>
           <button
             onClick={() => setSettingsModalOpen(true)}
             className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
           >
-            Settings
+            {TEXT.DASHBOARD.BUTTONS.SETTINGS}
           </button>
         </div>
       </div>
@@ -198,18 +199,18 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         {/* Income Card */}
         <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-bold mb-4">Income</h2>
+          <h2 className="text-xl font-bold mb-4">{TEXT.DASHBOARD.SECTIONS.INCOME}</h2>
           <div className="space-y-4">
             <p className="text-2xl font-bold">NZ ${totals.income.toLocaleString()}</p>
             <button 
               onClick={() => openModal('income')}
               className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
             >
-              Add Income
+              {TEXT.DASHBOARD.BUTTONS.ADD_INCOME}
             </button>
             {entries.income.length > 0 && (
               <div className="mt-4">
-                <h3 className="font-medium mb-2">Income Entries:</h3>
+                <h3 className="font-medium mb-2">{TEXT.DASHBOARD.SECTIONS.INCOME_ENTRIES}</h3>
                 <div className="space-y-2">
                   {sortEntries('income', entries.income).map(entry => (
                     <EntryDisplay
@@ -226,7 +227,7 @@ const Dashboard = () => {
 
         {/* Pie Chart */}
         <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-bold mb-4">Spending Distribution</h2>
+          <h2 className="text-xl font-bold mb-4">{TEXT.DASHBOARD.SECTIONS.SPENDING_PIE}</h2>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -259,13 +260,13 @@ const Dashboard = () => {
             <div className="space-y-4">
               {/* Current Amount */}
               <div>
-                <p className="text-sm text-gray-500">Current Amount</p>
+                <p className="text-sm text-gray-500">{TEXT.DASHBOARD.LABELS.CURRENT}</p>
                 <p className="text-xl font-bold">NZ ${totals[category].toLocaleString()}</p>
               </div>
 
               {/* Target Amount */}
               <div>
-                <p className="text-sm text-gray-500">Target Amount ({targetPercentages[category]}%)</p>
+                <p className="text-sm text-gray-500">{TEXT.DASHBOARD.LABELS.TARGET} ({targetPercentages[category]}%)</p>
                 <p className="text-xl">NZ ${parseFloat(getTargetAmount(category)).toLocaleString()}</p>
               </div>
 
@@ -277,7 +278,7 @@ const Dashboard = () => {
 
               {/* Variance */}
               <div className="bg-gray-50 p-3 rounded">
-                <p className="text-sm mb-1">Variance</p>
+                <p className="text-sm mb-1">{TEXT.DASHBOARD.LABELS.VARIANCE}</p>
                 <p className={`font-bold ${parseFloat(getDollarVariance(category)) > 0 ? 'text-red-500' : 'text-green-500'}`}>
                   NZ ${parseFloat(getDollarVariance(category)).toLocaleString()}
                   <span className="text-sm ml-1">({getVariance(category)}%)</span>
@@ -288,13 +289,13 @@ const Dashboard = () => {
                 onClick={() => openModal(category)}
                 className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 w-full"
               >
-                Add Entry
+                {TEXT.ENTRY_FORM.BUTTONS.ADD}
               </button>
 
               {/* Category Entries */}
               {entries[category].length > 0 && (
                 <div className="mt-4">
-                  <h3 className="font-medium mb-2">Entries:</h3>
+                  <h3 className="font-medium mb-2">{TEXT.DASHBOARD.SECTIONS.ENTRIES}:</h3>
                   <div className="space-y-2">
                     {sortEntries(category, entries[category]).map(entry => (
                       <EntryDisplay
