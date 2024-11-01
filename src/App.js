@@ -1,8 +1,10 @@
+import React from 'react';
 import Dashboard from './components/Dashboard';
+import './App.css';
 
 function App() {
   return (
-    <div className="App">
+    <div className="min-h-screen bg-gray-100">
       <Dashboard />
     </div>
   );

@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { Modal, SettingsModal, EntryForm, ProgressBar, getMonthYear, getWeekNumber } from './Dashboard.utils';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { ScenarioModal } from './ScenarioModal';
+import { Modal, EntryForm, ProgressBar } from './Dashboard.utils';
+import { EntryDisplay } from './components/EntryDisplay';
+import { SettingsModal } from './components/SettingsModal';
+import { getMonthYear, getWeekNumber } from '../../utils/dates';
+import { scenarioService } from '../../services/scenarioService';
 
-// Main Dashboard Component
 const Dashboard = () => {
   // Load initial state from localStorage
   const loadFromStorage = (key, defaultValue) => {
@@ -36,6 +40,7 @@ const Dashboard = () => {
   });
 
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [scenarioModalOpen, setScenarioModalOpen] = useState(false);
   const [timeframe, setTimeframe] = useState('all');
   const [selectedPeriod, setSelectedPeriod] = useState(getMonthYear(new Date()));
   const [sortConfig, setSortConfig] = useState({
@@ -74,7 +79,30 @@ const Dashboard = () => {
     }));
   };
 
-  // Save to localStorage whenever data changes
+  // Scenario management functions
+  const handleSaveScenario = async (name) => {
+    const scenarioData = {
+      entries,
+      targetPercentages,
+      timeframe,
+      selectedPeriod
+    };
+    await scenarioService.saveScenario(name, scenarioData);
+  };
+
+  const handleLoadScenario = async (id) => {
+    const scenario = await scenarioService.loadScenario(id);
+    setEntries(scenario.data.entries);
+    setTargetPercentages(scenario.data.targetPercentages);
+    setTimeframe(scenario.data.timeframe);
+    setSelectedPeriod(scenario.data.selectedPeriod);
+  };
+
+  const handleDeleteScenario = async (id) => {
+    await scenarioService.deleteScenario(id);
+  };
+
+  // Effects
   useEffect(() => {
     localStorage.setItem('entries', JSON.stringify(entries));
   }, [entries]);
@@ -83,19 +111,32 @@ const Dashboard = () => {
     localStorage.setItem('targetPercentages', JSON.stringify(targetPercentages));
   }, [targetPercentages]);
 
-  // Calculate totals based on timeframe
   useEffect(() => {
     const filteredEntries = filterEntriesByTimeframe(entries);
     const newTotals = {
-      income: filteredEntries.income.reduce((sum, entry) => sum + entry.value, 0),
-      savings: filteredEntries.savings.reduce((sum, entry) => sum + entry.value, 0),
-      fundamental: filteredEntries.fundamental.reduce((sum, entry) => sum + entry.value, 0),
-      enjoyment: filteredEntries.enjoyment.reduce((sum, entry) => sum + entry.value, 0)
+      income: filteredEntries.income.reduce((sum, entry) => sum + getValueForTimeframe(entry), 0),
+      savings: filteredEntries.savings.reduce((sum, entry) => sum + getValueForTimeframe(entry), 0),
+      fundamental: filteredEntries.fundamental.reduce((sum, entry) => sum + getValueForTimeframe(entry), 0),
+      enjoyment: filteredEntries.enjoyment.reduce((sum, entry) => sum + getValueForTimeframe(entry), 0)
     };
     setTotals(newTotals);
   }, [entries, timeframe, selectedPeriod]);
 
   // Utility functions
+  const getValueForTimeframe = (entry) => {
+    if (!entry.valueBreakdown || entry.frequency === 'once') return entry.value;
+
+    switch (timeframe) {
+      case 'weekly':
+        return entry.valueBreakdown.weekly;
+      case 'fortnightly':
+        return entry.valueBreakdown.fortnightly;
+      case 'monthly':
+      default:
+        return entry.valueBreakdown.monthly;
+    }
+  };
+
   const filterEntriesByTimeframe = (allEntries) => {
     if (timeframe === 'all') return allEntries;
 
@@ -119,8 +160,8 @@ const Dashboard = () => {
     return [...entriesToSort].sort((a, b) => {
       if (sortConfig.field === 'value') {
         return sortConfig.direction === 'asc' 
-          ? a.value - b.value 
-          : b.value - a.value;
+          ? getValueForTimeframe(a) - getValueForTimeframe(b)
+          : getValueForTimeframe(b) - getValueForTimeframe(a);
       }
       if (sortConfig.field === 'date') {
         return sortConfig.direction === 'asc'
@@ -176,13 +217,18 @@ const Dashboard = () => {
     { name: 'Fundamental', value: parseFloat(getPercentage('fundamental')) },
     { name: 'Enjoyment', value: parseFloat(getPercentage('enjoyment')) }
   ];
-
   return (
     <div className="p-4 max-w-6xl mx-auto">
       {/* Header Section */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">MonEee Dashboard</h1>
         <div className="space-x-2">
+          <button
+            onClick={() => setScenarioModalOpen(true)}
+            className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600"
+          >
+            Scenarios
+          </button>
           <button
             onClick={() => setSettingsModalOpen(true)}
             className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
@@ -234,24 +280,16 @@ const Dashboard = () => {
             >
               Add Income
             </button>
-            {/* Income Entries */}
             {entries.income.length > 0 && (
               <div className="mt-4">
                 <h3 className="font-medium mb-2">Income Entries:</h3>
                 <div className="space-y-2">
                   {sortEntries('income', entries.income).map(entry => (
-                    <div key={entry.id} className="flex justify-between items-center bg-gray-50 p-2 rounded">
-                      <span>{entry.name}</span>
-                      <div className="flex items-center space-x-2">
-                        <span>NZ ${entry.value.toLocaleString()}</span>
-                        <button
-                          onClick={() => deleteEntry('income', entry.id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    </div>
+                    <EntryDisplay
+                      key={entry.id}
+                      entry={entry}
+                      onDelete={() => deleteEntry('income', entry.id)}
+                    />
                   ))}
                 </div>
               </div>
@@ -332,18 +370,11 @@ const Dashboard = () => {
                   <h3 className="font-medium mb-2">Entries:</h3>
                   <div className="space-y-2">
                     {sortEntries(category, entries[category]).map(entry => (
-                      <div key={entry.id} className="flex justify-between items-center bg-gray-50 p-2 rounded">
-                        <span>{entry.name}</span>
-                        <div className="flex items-center space-x-2">
-                          <span>NZ ${entry.value.toLocaleString()}</span>
-                          <button
-                            onClick={() => deleteEntry(category, entry.id)}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      </div>
+                      <EntryDisplay
+                        key={entry.id}
+                        entry={entry}
+                        onDelete={() => deleteEntry(category, entry.id)}
+                      />
                     ))}
                   </div>
                 </div>
@@ -359,6 +390,14 @@ const Dashboard = () => {
         onClose={() => setSettingsModalOpen(false)}
         targetPercentages={targetPercentages}
         onSave={setTargetPercentages}
+      />
+
+      <ScenarioModal
+        isOpen={scenarioModalOpen}
+        onClose={() => setScenarioModalOpen(false)}
+        onSave={handleSaveScenario}
+        onLoad={handleLoadScenario}
+        onDelete={handleDeleteScenario}
       />
 
       <Modal isOpen={modalState.isOpen} onClose={closeModal}>
