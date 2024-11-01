@@ -165,7 +165,7 @@ export const EntryForm = ({ category, onSubmit, onClose }) => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Amount (NZD)
+                {TEXT.DASHBOARD.ENTRY_FORM.LABELS.AMOUNT}
               </label>
               <input
                 type="number"
@@ -202,19 +202,19 @@ export const EntryForm = ({ category, onSubmit, onClose }) => {
                 <div>
                   <p className="text-gray-500">Weekly</p>
                   <p className="font-medium">
-                    NZ ${calculateFrequencyValues(formData.originalValue, formData.frequency).weekly.toFixed(2)}
+                    ${calculateFrequencyValues(formData.originalValue, formData.frequency).weekly.toFixed(2)}
                   </p>
                 </div>
                 <div>
                   <p className="text-gray-500">Fortnightly</p>
                   <p className="font-medium">
-                    NZ ${calculateFrequencyValues(formData.originalValue, formData.frequency).fortnightly.toFixed(2)}
+                    ${calculateFrequencyValues(formData.originalValue, formData.frequency).fortnightly.toFixed(2)}
                   </p>
                 </div>
                 <div>
                   <p className="text-gray-500">Monthly</p>
                   <p className="font-medium">
-                    NZ ${calculateFrequencyValues(formData.originalValue, formData.frequency).monthly.toFixed(2)}
+                    ${calculateFrequencyValues(formData.originalValue, formData.frequency).monthly.toFixed(2)}
                   </p>
                 </div>
               </div>
@@ -233,13 +233,13 @@ export const EntryForm = ({ category, onSubmit, onClose }) => {
           onClick={onClose}
           className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
         >
-          Cancel
+          {TEXT.ENTRY_FORM.BUTTONS.CANCEL}
         </button>
         <button
           type="submit"
           className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
         >
-          Add Entry
+          {TEXT.ENTRY_FORM.BUTTONS.ADD}
         </button>
       </div>
     </form>

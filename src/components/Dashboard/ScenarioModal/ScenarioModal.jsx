@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Modal } from '../Dashboard.utils';
 import { scenarioStorage } from '../../../services/scenarioStorage';
-
 const ScenarioModal = ({ isOpen, onClose, onSave, onLoad, onDelete }) => {
   const [scenarios, setScenarios] = useState([]);
   const [newScenarioName, setNewScenarioName] = useState('');

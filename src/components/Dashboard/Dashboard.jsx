@@ -170,9 +170,9 @@ const Dashboard = () => {
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28'];
   const pieData = [
-    { name: 'Savings', value: parseFloat(getPercentage('savings')) },
-    { name: 'Fundamental', value: parseFloat(getPercentage('fundamental')) },
-    { name: 'Enjoyment', value: parseFloat(getPercentage('enjoyment')) }
+    { name: 'Savings &', value: parseFloat(getPercentage('savings')) },
+    { name: 'Fundamental Expenses', value: parseFloat(getPercentage('fundamental')) },
+    { name: 'Guilt Free Enjoyment', value: parseFloat(getPercentage('enjoyment')) }
   ];
   return (
     <div className="p-4 max-w-6xl mx-auto">
