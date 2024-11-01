@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-import ScenarioModal from './ScenarioModal'; // This points to ScenarioModal/index.js
+import ScenarioModal from './ScenarioModal';
 import { Modal, EntryForm, ProgressBar } from './Dashboard.utils';
-import EntryDisplay from './components/EntryDisplay'; // This points to components/EntryDisplay/index.js
-import SettingsModal from './components/SettingsModal'; // This points to components/SettingsModal/index.js
-import { getMonthYear, getWeekNumber } from '../../utils/dates';
-import { scenarioService } from '../../services/scenarioService';
+import EntryDisplay from './components/EntryDisplay';
+import SettingsModal from './components/SettingsModal';
+import { scenarioStorage } from '../../services/scenarioStorage';
 
 const Dashboard = () => {
   // Load initial state from localStorage
@@ -41,11 +40,9 @@ const Dashboard = () => {
 
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [scenarioModalOpen, setScenarioModalOpen] = useState(false);
-  const [timeframe, setTimeframe] = useState('all');
-  const [selectedPeriod, setSelectedPeriod] = useState(getMonthYear(new Date()));
   const [sortConfig, setSortConfig] = useState({
     category: null,
-    field: 'date',
+    field: 'value',
     direction: 'desc'
   });
 
@@ -83,23 +80,19 @@ const Dashboard = () => {
   const handleSaveScenario = async (name) => {
     const scenarioData = {
       entries,
-      targetPercentages,
-      timeframe,
-      selectedPeriod
+      targetPercentages
     };
-    await scenarioService.saveScenario(name, scenarioData);
+    await scenarioStorage.saveScenario(name, scenarioData);
   };
 
   const handleLoadScenario = async (id) => {
-    const scenario = await scenarioService.loadScenario(id);
+    const scenario = scenarioStorage.loadScenario(id);
     setEntries(scenario.data.entries);
     setTargetPercentages(scenario.data.targetPercentages);
-    setTimeframe(scenario.data.timeframe);
-    setSelectedPeriod(scenario.data.selectedPeriod);
   };
 
   const handleDeleteScenario = async (id) => {
-    await scenarioService.deleteScenario(id);
+    await scenarioStorage.deleteScenario(id);
   };
 
   // Effects
@@ -112,61 +105,24 @@ const Dashboard = () => {
   }, [targetPercentages]);
 
   useEffect(() => {
-    const filteredEntries = filterEntriesByTimeframe(entries);
     const newTotals = {
-      income: filteredEntries.income.reduce((sum, entry) => sum + getValueForTimeframe(entry), 0),
-      savings: filteredEntries.savings.reduce((sum, entry) => sum + getValueForTimeframe(entry), 0),
-      fundamental: filteredEntries.fundamental.reduce((sum, entry) => sum + getValueForTimeframe(entry), 0),
-      enjoyment: filteredEntries.enjoyment.reduce((sum, entry) => sum + getValueForTimeframe(entry), 0)
+      income: entries.income.reduce((sum, entry) => sum + entry.value, 0),
+      savings: entries.savings.reduce((sum, entry) => sum + entry.value, 0),
+      fundamental: entries.fundamental.reduce((sum, entry) => sum + entry.value, 0),
+      enjoyment: entries.enjoyment.reduce((sum, entry) => sum + entry.value, 0)
     };
     setTotals(newTotals);
-  }, [entries, timeframe, selectedPeriod]);
+  }, [entries]);
 
   // Utility functions
-  const getValueForTimeframe = (entry) => {
-    if (!entry.valueBreakdown || entry.frequency === 'once') return entry.value;
-
-    switch (timeframe) {
-      case 'weekly':
-        return entry.valueBreakdown.weekly;
-      case 'fortnightly':
-        return entry.valueBreakdown.fortnightly;
-      case 'monthly':
-      default:
-        return entry.valueBreakdown.monthly;
-    }
-  };
-
-  const filterEntriesByTimeframe = (allEntries) => {
-    if (timeframe === 'all') return allEntries;
-
-    const filtered = {};
-    Object.keys(allEntries).forEach(category => {
-      filtered[category] = allEntries[category].filter(entry => {
-        if (timeframe === 'monthly') {
-          return entry.monthYear === selectedPeriod;
-        } else if (timeframe === 'weekly') {
-          return entry.weekNumber === parseInt(selectedPeriod);
-        }
-        return true;
-      });
-    });
-    return filtered;
-  };
-
   const sortEntries = (category, entriesToSort) => {
     if (!sortConfig.field) return entriesToSort;
 
     return [...entriesToSort].sort((a, b) => {
       if (sortConfig.field === 'value') {
         return sortConfig.direction === 'asc' 
-          ? getValueForTimeframe(a) - getValueForTimeframe(b)
-          : getValueForTimeframe(b) - getValueForTimeframe(a);
-      }
-      if (sortConfig.field === 'date') {
-        return sortConfig.direction === 'asc'
-          ? new Date(a.date) - new Date(b.date)
-          : new Date(b.date) - new Date(a.date);
+          ? a.value - b.value
+          : b.value - a.value;
       }
       if (sortConfig.field === 'name') {
         return sortConfig.direction === 'asc'
@@ -235,35 +191,6 @@ const Dashboard = () => {
           >
             Settings
           </button>
-          <select
-            value={timeframe}
-            onChange={(e) => setTimeframe(e.target.value)}
-            className="border border-gray-300 rounded px-3 py-2"
-          >
-            <option value="all">All Time</option>
-            <option value="monthly">Monthly</option>
-            <option value="weekly">Weekly</option>
-          </select>
-          {timeframe !== 'all' && (
-            <select
-              value={selectedPeriod}
-              onChange={(e) => setSelectedPeriod(e.target.value)}
-              className="border border-gray-300 rounded px-3 py-2"
-            >
-              {Array.from(new Set(
-                entries.income.map(entry => 
-                  timeframe === 'monthly' ? entry.monthYear : entry.weekNumber
-                )
-              )).sort().map(period => (
-                <option key={period} value={period}>
-                  {timeframe === 'monthly' 
-                    ? new Date(period + '-01').toLocaleString('default', { month: 'long', year: 'numeric' })
-                    : `Week ${period}`
-                  }
-                </option>
-              ))}
-            </select>
-          )}
         </div>
       </div>
 

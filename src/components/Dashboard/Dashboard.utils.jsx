@@ -1,8 +1,41 @@
 import React, { useState } from 'react';
-import { getMonthYear, getWeekNumber } from '../../utils/dates';
-import { calculateFrequencyValues } from '../../utils/calculations';
+import PropTypes from 'prop-types';
 
-// Basic Modal Component
+// Calculate frequency values
+const calculateFrequencyValues = (amount, frequency) => {
+  const value = parseFloat(amount);
+  if (isNaN(value)) return { weekly: 0, fortnightly: 0, monthly: 0 };
+
+  switch (frequency) {
+    case 'weekly':
+      return {
+        weekly: value,
+        fortnightly: value * 2,
+        monthly: value * 4.33
+      };
+    case 'fortnightly':
+      return {
+        weekly: value / 2,
+        fortnightly: value,
+        monthly: value * 2.165
+      };
+    case 'monthly':
+      return {
+        weekly: value / 4.33,
+        fortnightly: value / 2.165,
+        monthly: value
+      };
+    case 'once':
+    default:
+      return {
+        weekly: value,
+        fortnightly: value,
+        monthly: value
+      };
+  }
+};
+
+// Modal Component
 export const Modal = ({ isOpen, onClose, children }) => {
   if (!isOpen) return null;
 
@@ -13,6 +46,12 @@ export const Modal = ({ isOpen, onClose, children }) => {
       </div>
     </div>
   );
+};
+
+Modal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  children: PropTypes.node.isRequired
 };
 
 // Progress Bar Component
@@ -28,12 +67,16 @@ export const ProgressBar = ({ actual, target }) => {
   );
 };
 
+ProgressBar.propTypes = {
+  actual: PropTypes.number.isRequired,
+  target: PropTypes.number.isRequired
+};
+
 // Entry Form Component
 export const EntryForm = ({ category, onSubmit, onClose }) => {
   const [formData, setFormData] = useState({
     name: '',
     value: '',
-    date: new Date().toISOString().split('T')[0],
     frequency: 'once',
     originalValue: ''
   });
@@ -49,11 +92,9 @@ export const EntryForm = ({ category, onSubmit, onClose }) => {
 
   const handleValueChange = (e) => {
     const newValue = e.target.value;
-    const values = calculateFrequencyValues(newValue, formData.frequency);
-    
     setFormData(prev => ({
       ...prev,
-      value: values.monthly,
+      value: newValue,
       originalValue: newValue
     }));
   };
@@ -91,9 +132,6 @@ export const EntryForm = ({ category, onSubmit, onClose }) => {
       value: values.monthly,
       originalValue: parseFloat(formData.originalValue),
       frequency: formData.frequency,
-      date: formData.date,
-      monthYear: getMonthYear(formData.date),
-      weekNumber: getWeekNumber(formData.date),
       valueBreakdown: {
         weekly: values.weekly,
         fortnightly: values.fortnightly,
@@ -180,18 +218,6 @@ export const EntryForm = ({ category, onSubmit, onClose }) => {
               </div>
             </div>
           )}
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Date
-            </label>
-            <input
-              type="date"
-              value={formData.date}
-              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
         </div>
       </div>
       
@@ -217,3 +243,11 @@ export const EntryForm = ({ category, onSubmit, onClose }) => {
     </form>
   );
 };
+
+EntryForm.propTypes = {
+  category: PropTypes.string.isRequired,
+  onSubmit: PropTypes.func.isRequired,
+  onClose: PropTypes.func.isRequired
+};
+
+export { calculateFrequencyValues };
