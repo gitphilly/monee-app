@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import CategoryCard from './components/CategoryCard';
+import TableView from './components/TableView';
+import { Modal, EntryForm } from './Dashboard.utils';
 import ScenarioModal from './ScenarioModal';
-import { Modal, EntryForm, ProgressBar } from './Dashboard.utils';
-import EntryDisplay from './components/EntryDisplay';
 import SettingsModal from './components/SettingsModal';
 import { scenarioStorage } from '../../services/scenarioStorage';
 import { TEXT } from '../../constants/text';
@@ -170,14 +171,14 @@ const Dashboard = () => {
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28'];
   const pieData = [
-    { name: 'Savings &', value: parseFloat(getPercentage('savings')) },
-    { name: 'Fundamental Expenses', value: parseFloat(getPercentage('fundamental')) },
-    { name: 'Guilt Free Enjoyment', value: parseFloat(getPercentage('enjoyment')) }
+    { name: 'Savings', value: parseFloat(getPercentage('savings')) },
+    { name: 'Fundamental', value: parseFloat(getPercentage('fundamental')) },
+    { name: 'Enjoyment', value: parseFloat(getPercentage('enjoyment')) }
   ];
   return (
-    <div className="p-4 max-w-6xl mx-auto">
+    <div className="p-4 max-w-7xl mx-auto space-y-6">
       {/* Header Section */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">{TEXT.DASHBOARD.MAIN_TITLE}</h1>
         <div className="space-x-2">
           <button
@@ -195,39 +196,33 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        {/* Income Card */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-bold mb-4">{TEXT.DASHBOARD.SECTIONS.INCOME}</h2>
-          <div className="space-y-4">
-            <p className="text-2xl font-bold">NZ ${totals.income.toLocaleString()}</p>
-            <button 
+      {/* Income and Chart Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Income Table */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h2 className="text-xl font-bold">{TEXT.DASHBOARD.SECTIONS.INCOME}</h2>
+              <p className="text-2xl font-bold mt-2">NZ ${totals.income.toLocaleString()}</p>
+            </div>
+            <button
               onClick={() => openModal('income')}
               className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
             >
               {TEXT.DASHBOARD.BUTTONS.ADD_INCOME}
             </button>
-            {entries.income.length > 0 && (
-              <div className="mt-4">
-                <h3 className="font-medium mb-2">{TEXT.DASHBOARD.SECTIONS.INCOME_ENTRIES}</h3>
-                <div className="space-y-2">
-                  {sortEntries('income', entries.income).map(entry => (
-                    <EntryDisplay
-                      key={entry.id}
-                      entry={entry}
-                      onDelete={() => deleteEntry('income', entry.id)}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
+          <TableView
+            entries={sortEntries('income', entries.income)}
+            onDelete={(id) => deleteEntry('income', id)}
+            showFrequency={true}
+            isIncome={true}
+          />
         </div>
 
         {/* Pie Chart */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-bold mb-4">{TEXT.DASHBOARD.SECTIONS.SPENDING_PIE}</h2>
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-bold mb-4">{TEXT.DASHBOARD.SECTIONS.SPENDING_DISTRIBUTION}</h2>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -244,7 +239,7 @@ const Dashboard = () => {
                     <Cell key={`cell-${index}`} fill={COLORS[index]} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip formatter={(value) => `${value.toFixed(1)}%`} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
@@ -252,63 +247,21 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Category Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Category Cards with Tables */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {['savings', 'fundamental', 'enjoyment'].map((category) => (
-          <div key={category} className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-bold mb-4 capitalize">{category}</h2>
-            <div className="space-y-4">
-              {/* Current Amount */}
-              <div>
-                <p className="text-sm text-gray-500">{TEXT.DASHBOARD.LABELS.CURRENT}</p>
-                <p className="text-xl font-bold">NZ ${totals[category].toLocaleString()}</p>
-              </div>
-
-              {/* Target Amount */}
-              <div>
-                <p className="text-sm text-gray-500">{TEXT.DASHBOARD.LABELS.TARGET} ({targetPercentages[category]}%)</p>
-                <p className="text-xl">NZ ${parseFloat(getTargetAmount(category)).toLocaleString()}</p>
-              </div>
-
-              {/* Progress Bar */}
-              <ProgressBar 
-                actual={totals[category]} 
-                target={parseFloat(getTargetAmount(category))}
-              />
-
-              {/* Variance */}
-              <div className="bg-gray-50 p-3 rounded">
-                <p className="text-sm mb-1">{TEXT.DASHBOARD.LABELS.VARIANCE}</p>
-                <p className={`font-bold ${parseFloat(getDollarVariance(category)) > 0 ? 'text-red-500' : 'text-green-500'}`}>
-                  NZ ${parseFloat(getDollarVariance(category)).toLocaleString()}
-                  <span className="text-sm ml-1">({getVariance(category)}%)</span>
-                </p>
-              </div>
-
-              <button 
-                onClick={() => openModal(category)}
-                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 w-full"
-              >
-                {TEXT.ENTRY_FORM.BUTTONS.ADD}
-              </button>
-
-              {/* Category Entries */}
-              {entries[category].length > 0 && (
-                <div className="mt-4">
-                  <h3 className="font-medium mb-2">{TEXT.DASHBOARD.SECTIONS.ENTRIES}:</h3>
-                  <div className="space-y-2">
-                    {sortEntries(category, entries[category]).map(entry => (
-                      <EntryDisplay
-                        key={entry.id}
-                        entry={entry}
-                        onDelete={() => deleteEntry(category, entry.id)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+          <CategoryCard
+            key={category}
+            title={TEXT.DASHBOARD.CATEGORIES[category.toUpperCase()]}
+            entries={sortEntries(category, entries[category])}
+            total={totals[category]}
+            targetPercentage={targetPercentages[category]}
+            targetAmount={parseFloat(getTargetAmount(category))}
+            onAddEntry={() => openModal(category)}
+            onDeleteEntry={(id) => deleteEntry(category, id)}
+            currentPercentage={parseFloat(getPercentage(category))}
+            variance={parseFloat(getDollarVariance(category))}
+          />
         ))}
       </div>
 
