@@ -7,16 +7,13 @@ const TableView = ({
   onDelete, 
   showFrequency = true,
   isIncome = false,
-  categoryType = ''
+  categoryType = '',
+  onFrequencyChange 
 }) => {
   const [selectedFrequency, setSelectedFrequency] = useState('monthly');
-  const [sortConfig, setSortConfig] = useState({
-    key: null,
-    direction: 'desc'
-  });
   
   const formatCurrency = (amount) => {
-    const formattedNumber = amount.toFixed(2);
+    const formattedNumber = Math.abs(amount).toFixed(2);
     return `$${formattedNumber.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
   };
 
@@ -25,6 +22,33 @@ const TableView = ({
       return entry.value;
     }
     return entry.valueBreakdown[selectedFrequency];
+  };
+
+  const handleFrequencyChange = (newFrequency) => {
+    setSelectedFrequency(newFrequency);
+    onFrequencyChange?.(newFrequency);
+  };
+
+  const [sortConfig, setSortConfig] = useState({
+    key: null,
+    direction: 'desc'
+  });
+
+  const requestSort = (key) => {
+    setSortConfig(prevConfig => ({
+      key,
+      direction: 
+        prevConfig.key === key && prevConfig.direction === 'asc' 
+          ? 'desc' 
+          : 'asc',
+    }));
+  };
+
+  const getSortIcon = (columnKey) => {
+    if (sortConfig.key !== columnKey) {
+      return '↕️';
+    }
+    return sortConfig.direction === 'asc' ? '↑' : '↓';
   };
 
   const sortedEntries = React.useMemo(() => {
@@ -46,23 +70,6 @@ const TableView = ({
     }
     return sortableEntries;
   }, [entries, sortConfig, selectedFrequency]);
-
-  const requestSort = (key) => {
-    setSortConfig(prevConfig => ({
-      key,
-      direction: 
-        prevConfig.key === key && prevConfig.direction === 'asc' 
-          ? 'desc' 
-          : 'asc',
-    }));
-  };
-
-  const getSortIcon = (columnKey) => {
-    if (sortConfig.key !== columnKey) {
-      return '↕️';
-    }
-    return sortConfig.direction === 'asc' ? '↑' : '↓';
-  };
 
   return (
     <div className="w-full">
