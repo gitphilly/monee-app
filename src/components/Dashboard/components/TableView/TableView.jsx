@@ -16,11 +16,8 @@ const TableView = ({
   });
   
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-NZ', {
-      style: 'currency',
-      currency: 'USD', // Changed to USD to remove 'NZ'
-      minimumFractionDigits: 2
-    }).format(amount);
+    const formattedNumber = amount.toFixed(2);
+    return `$${formattedNumber.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
   };
 
   const getValue = (entry) => {

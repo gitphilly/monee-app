@@ -6,7 +6,6 @@ import { Modal, EntryForm } from './Dashboard.utils';
 import ScenarioModal from './ScenarioModal';
 import SettingsModal from './components/SettingsModal';
 import { scenarioStorage } from '../../services/scenarioStorage';
-import { TEXT } from '../../constants/text';
 
 const Dashboard = () => {
   // Load initial state from localStorage
@@ -42,11 +41,12 @@ const Dashboard = () => {
 
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [scenarioModalOpen, setScenarioModalOpen] = useState(false);
-  const [sortConfig, setSortConfig] = useState({
-    category: null,
-    field: 'value',
-    direction: 'desc'
-  });
+
+  // Format currency consistently
+  const formatCurrency = (amount) => {
+    const formattedNumber = Math.abs(amount).toFixed(2);
+    return `$${formattedNumber.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
+  };
 
   // Modal control functions
   const openModal = (category) => {
@@ -117,37 +117,6 @@ const Dashboard = () => {
   }, [entries]);
 
   // Utility functions
-  const sortEntries = (category, entriesToSort) => {
-    if (!sortConfig.field) return entriesToSort;
-
-    return [...entriesToSort].sort((a, b) => {
-      if (sortConfig.field === 'value') {
-        return sortConfig.direction === 'asc' 
-          ? a.value - b.value
-          : b.value - a.value;
-      }
-      if (sortConfig.field === 'name') {
-        return sortConfig.direction === 'asc'
-          ? a.name.localeCompare(b.name)
-          : b.name.localeCompare(a.name);
-      }
-      return 0;
-    });
-  };
-
-  const handleSort = (category, field) => {
-    setSortConfig(prev => ({
-      category,
-      field,
-      direction: 
-        prev.category === category && prev.field === field
-          ? prev.direction === 'asc' 
-            ? 'desc' 
-            : 'asc'
-          : 'asc'
-    }));
-  };
-
   const getPercentage = (category) => {
     if (totals.income === 0) return 0;
     return ((totals[category] / totals.income) * 100).toFixed(1);
@@ -179,50 +148,51 @@ const Dashboard = () => {
     <div className="p-4 max-w-7xl mx-auto space-y-6">
       {/* Header Section */}
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">{TEXT.DASHBOARD.MAIN_TITLE}</h1>
+        <h1 className="text-3xl font-bold">Manage Our Money</h1>
         <div className="space-x-2">
           <button
             onClick={() => setScenarioModalOpen(true)}
             className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600"
           >
-            {TEXT.DASHBOARD.BUTTONS.SCENARIOS}
+            Scenarios
           </button>
           <button
             onClick={() => setSettingsModalOpen(true)}
             className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
           >
-            {TEXT.DASHBOARD.BUTTONS.SETTINGS}
+            Settings
           </button>
         </div>
       </div>
 
       {/* Income and Chart Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Income Table */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex justify-between items-center mb-4">
+        {/* Income Section */}
+        <div className="bg-white rounded-lg p-6">
+          <div className="flex justify-between items-start mb-4">
             <div>
-              <h2 className="text-xl font-bold">{TEXT.DASHBOARD.SECTIONS.INCOME}</h2>
-              <p className="text-2xl font-bold mt-2">NZ ${totals.income.toLocaleString()}</p>
+              <h2 className="text-xl font-bold">Income</h2>
+              <p className="text-2xl font-bold mt-2">
+                {formatCurrency(totals.income)}
+              </p>
             </div>
             <button
               onClick={() => openModal('income')}
               className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
             >
-              {TEXT.DASHBOARD.BUTTONS.ADD_INCOME}
+              Add Income
             </button>
           </div>
           <TableView
-            entries={sortEntries('income', entries.income)}
+            entries={entries.income}
             onDelete={(id) => deleteEntry('income', id)}
-            showFrequency={true}
             isIncome={true}
           />
         </div>
 
         {/* Pie Chart */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold mb-4">{TEXT.DASHBOARD.SECTIONS.SPENDING_DISTRIBUTION}</h2>
+        <div className="bg-white rounded-lg p-6">
+          <h2 className="text-xl font-bold mb-4">Spending Distribution</h2>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -233,13 +203,13 @@ const Dashboard = () => {
                   cx="50%"
                   cy="50%"
                   outerRadius={80}
-                  label
+                  label={({ value }) => `${value}%`}
                 >
                   {pieData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => `${value.toFixed(1)}%`} />
+                <Tooltip formatter={(value) => `${value}%`} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
@@ -247,22 +217,46 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Category Cards with Tables */}
+      {/* Category Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {['savings', 'fundamental', 'enjoyment'].map((category) => (
-          <CategoryCard
-            key={category}
-            title={TEXT.DASHBOARD.CATEGORIES[category.toUpperCase()]}
-            entries={sortEntries(category, entries[category])}
-            total={totals[category]}
-            targetPercentage={targetPercentages[category]}
-            targetAmount={parseFloat(getTargetAmount(category))}
-            onAddEntry={() => openModal(category)}
-            onDeleteEntry={(id) => deleteEntry(category, id)}
-            currentPercentage={parseFloat(getPercentage(category))}
-            variance={parseFloat(getDollarVariance(category))}
-          />
-        ))}
+        {/* Savings Category */}
+        <CategoryCard
+          title="Savings & Investments"
+          entries={entries.savings}
+          total={totals.savings}
+          targetPercentage={targetPercentages.savings}
+          targetAmount={parseFloat(getTargetAmount('savings'))}
+          onAddEntry={() => openModal('savings')}
+          onDeleteEntry={(id) => deleteEntry('savings', id)}
+          currentPercentage={parseFloat(getPercentage('savings'))}
+          variance={parseFloat(getDollarVariance('savings'))}
+        />
+
+        {/* Fundamental Category */}
+        <CategoryCard
+          title="Fundamental Expenses"
+          entries={entries.fundamental}
+          total={totals.fundamental}
+          targetPercentage={targetPercentages.fundamental}
+          targetAmount={parseFloat(getTargetAmount('fundamental'))}
+          onAddEntry={() => openModal('fundamental')}
+          onDeleteEntry={(id) => deleteEntry('fundamental', id)}
+          currentPercentage={parseFloat(getPercentage('fundamental'))}
+          variance={parseFloat(getDollarVariance('fundamental'))}
+        />
+
+        {/* Enjoyment Category */}
+        <CategoryCard
+          title="Guilt Free Enjoyment"
+          entries={entries.enjoyment}
+          total={totals.enjoyment}
+          targetPercentage={targetPercentages.enjoyment}
+          targetAmount={parseFloat(getTargetAmount('enjoyment'))}
+          onAddEntry={() => openModal('enjoyment')}
+          onDeleteEntry={(id) => deleteEntry('enjoyment', id)}
+          currentPercentage={parseFloat(getPercentage('enjoyment'))}
+          variance={parseFloat(getDollarVariance('enjoyment'))}
+        />
       </div>
 
       {/* Modals */}
