@@ -11,18 +11,11 @@ RUN npm ci --production
 COPY . .
 RUN npm run build
 
-# Production stage
+# Production stage - using nginx only to serve static files
 FROM nginx:alpine
-# Add curl for healthcheck
-RUN apk --no-cache add curl
 
-# Copy built files and nginx config
+# Copy built files
 COPY --from=build /app/build /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Add healthcheck
-HEALTHCHECK --interval=30s --timeout=3s \
-  CMD curl -f http://localhost:80 || exit 1
 
 EXPOSE 80
 
