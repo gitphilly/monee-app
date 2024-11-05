@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { TEXT } from '../../constants/text';
+import { TEXT } from '../constants/text';
 
 
 // Calculate frequency values

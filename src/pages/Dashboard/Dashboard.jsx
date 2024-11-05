@@ -1,13 +1,132 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-import CategoryCard from './components/CategoryCard';
-import TableView from './components/TableView';
-import { Modal, EntryForm } from './Dashboard.utils';
-import ScenarioModal from './ScenarioModal';
-import SettingsModal from './components/SettingsModal';
+import CategoryCard from '../../components/CategoryCard';
+import TableView from '../../components/TableView';
+import SettingsModal from '../../components/SettingsModal';
 import { scenarioStorage } from '../../services/scenarioStorage';
+import ScenarioModal from '../../components/ScenarioModal';
+import { convertAmount } from '../../utils/frequencyUtils';
 
+// Modal Component
+const Modal = ({ isOpen, onClose, children }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+          <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+        </div>
+        <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// EntryForm Component
+const EntryForm = ({ category, onSubmit, onClose }) => {
+  const [entry, setEntry] = useState({
+    name: '',
+    value: '',
+    frequency: 'monthly'
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const numericValue = parseFloat(entry.value);
+    
+    // Calculate values based on frequency
+    let finalValue = numericValue;
+    if (entry.frequency === 'weekly') {
+      finalValue = numericValue * 52 / 12;
+    } else if (entry.frequency === 'fortnightly') {
+      finalValue = numericValue * 26 / 12;
+    }
+
+    const valueBreakdown = {
+      weekly: entry.frequency === 'weekly' ? numericValue : finalValue * 12 / 52,
+      fortnightly: entry.frequency === 'fortnightly' ? numericValue : finalValue * 12 / 26,
+      monthly: entry.frequency === 'monthly' ? numericValue : finalValue
+    };
+
+    onSubmit({
+      id: Date.now(),
+      name: entry.name,
+      value: finalValue,
+      originalValue: numericValue,
+      frequency: entry.frequency,
+      valueBreakdown
+    });
+    onClose();
+  };
+
+  return (
+    <div className="p-4">
+      <h2 className="text-xl font-bold mb-4">
+        Add {category.charAt(0).toUpperCase() + category.slice(1)} Entry
+      </h2>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Name</label>
+          <input
+            type="text"
+            value={entry.name}
+            onChange={(e) => setEntry({ ...entry, name: e.target.value })}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Amount</label>
+          <input
+            type="number"
+            value={entry.value}
+            onChange={(e) => setEntry({ ...entry, value: e.target.value })}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            required
+            step="0.01"
+            min="0"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Frequency</label>
+          <select
+            value={entry.frequency}
+            onChange={(e) => setEntry({ ...entry, frequency: e.target.value })}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+          >
+            <option value="weekly">Weekly</option>
+            <option value="fortnightly">Fortnightly</option>
+            <option value="monthly">Monthly</option>
+            <option value="once">One-time</option>
+          </select>
+        </div>
+        <div className="flex justify-end space-x-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          >
+            Add Entry
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
 const Dashboard = () => {
+  // Add frequency state
+  const [selectedFrequency, setSelectedFrequency] = useState('monthly');
+
   // Load initial state from localStorage
   const loadFromStorage = (key, defaultValue) => {
     const stored = localStorage.getItem(key);
@@ -144,6 +263,7 @@ const Dashboard = () => {
     { name: 'Fundamental', value: parseFloat(getPercentage('fundamental')) },
     { name: 'Enjoyment', value: parseFloat(getPercentage('enjoyment')) }
   ];
+
   return (
     <div className="p-4 max-w-7xl mx-auto space-y-6">
       {/* Header Section */}
@@ -169,24 +289,49 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Income Section */}
         <div className="bg-white rounded-lg p-6">
-          <div className="flex justify-between items-start mb-4">
+          <div className="flex justify-between items-center mb-4">
             <div>
               <h2 className="text-xl font-bold">Income</h2>
               <p className="text-2xl font-bold mt-2">
-                {formatCurrency(totals.income)}
+                {formatCurrency(convertAmount(totals.income, 'monthly', selectedFrequency))}
               </p>
             </div>
-            <button
-              onClick={() => openModal('income')}
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-            >
-              Add Income
-            </button>
+            <div className="flex items-center space-x-2">
+              <select
+                value={selectedFrequency}
+                onChange={(e) => setSelectedFrequency(e.target.value)}
+                className="border border-gray-300 rounded-md shadow-sm p-2 text-sm"
+              >
+                <option value="weekly">Weekly</option>
+                <option value="fortnightly">Fortnightly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+              <button
+                onClick={() => openModal('income')}
+                className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600"
+              >
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  width="20" 
+                  height="20" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                >
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+              </button>
+            </div>
           </div>
           <TableView
             entries={entries.income}
             onDelete={(id) => deleteEntry('income', id)}
             isIncome={true}
+            selectedFrequency={selectedFrequency}
           />
         </div>
 
@@ -230,6 +375,7 @@ const Dashboard = () => {
           onDeleteEntry={(id) => deleteEntry('savings', id)}
           currentPercentage={parseFloat(getPercentage('savings'))}
           variance={parseFloat(getDollarVariance('savings'))}
+          selectedFrequency={selectedFrequency}
         />
 
         {/* Fundamental Category */}
@@ -243,6 +389,7 @@ const Dashboard = () => {
           onDeleteEntry={(id) => deleteEntry('fundamental', id)}
           currentPercentage={parseFloat(getPercentage('fundamental'))}
           variance={parseFloat(getDollarVariance('fundamental'))}
+          selectedFrequency={selectedFrequency}
         />
 
         {/* Enjoyment Category */}
@@ -256,6 +403,7 @@ const Dashboard = () => {
           onDeleteEntry={(id) => deleteEntry('enjoyment', id)}
           currentPercentage={parseFloat(getPercentage('enjoyment'))}
           variance={parseFloat(getDollarVariance('enjoyment'))}
+          selectedFrequency={selectedFrequency}
         />
       </div>
 

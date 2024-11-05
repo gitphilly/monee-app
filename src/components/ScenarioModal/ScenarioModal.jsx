@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Modal } from '../Dashboard.utils';
-import { scenarioStorage } from '../../../services/scenarioStorage';
+import { Modal } from '../../utils/dashboardUtils';
+import { scenarioStorage } from '../../services/scenarioStorage';
+
+
 const ScenarioModal = ({ isOpen, onClose, onSave, onLoad, onDelete }) => {
   const [scenarios, setScenarios] = useState([]);
   const [newScenarioName, setNewScenarioName] = useState('');
@@ -115,8 +117,8 @@ const ScenarioModal = ({ isOpen, onClose, onSave, onLoad, onDelete }) => {
             <button
               onClick={handleSave}
               className={`px-4 py-2 rounded text-white ${
-                saving 
-                  ? 'bg-blue-400 cursor-not-allowed' 
+                saving
+                  ? 'bg-blue-400 cursor-not-allowed'
                   : 'bg-blue-500 hover:bg-blue-600'
               }`}
               disabled={saving || !newScenarioName.trim()}
@@ -152,8 +154,8 @@ const ScenarioModal = ({ isOpen, onClose, onSave, onLoad, onDelete }) => {
                       <button
                         onClick={() => handleLoad(scenario.id, scenario.name)}
                         className={`px-3 py-1 rounded text-white text-sm ${
-                          loadingScenario 
-                            ? 'bg-green-400 cursor-not-allowed' 
+                          loadingScenario
+                            ? 'bg-green-400 cursor-not-allowed'
                             : 'bg-green-500 hover:bg-green-600'
                         }`}
                         disabled={loadingScenario}
@@ -163,8 +165,8 @@ const ScenarioModal = ({ isOpen, onClose, onSave, onLoad, onDelete }) => {
                       <button
                         onClick={() => handleDelete(scenario.id, scenario.name)}
                         className={`px-3 py-1 rounded text-white text-sm ${
-                          deleting 
-                            ? 'bg-red-400 cursor-not-allowed' 
+                          deleting
+                            ? 'bg-red-400 cursor-not-allowed'
                             : 'bg-red-500 hover:bg-red-600'
                         }`}
                         disabled={deleting}

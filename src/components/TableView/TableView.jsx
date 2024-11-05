@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 import FrequencySelector from './FrequencySelector';
 
@@ -8,10 +8,8 @@ const TableView = ({
   showFrequency = true,
   isIncome = false,
   categoryType = '',
-  onFrequencyChange 
+  selectedFrequency = 'monthly'
 }) => {
-  const [selectedFrequency, setSelectedFrequency] = useState('monthly');
-  
   const formatCurrency = (amount) => {
     const formattedNumber = Math.abs(amount).toFixed(2);
     return `$${formattedNumber.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
@@ -24,12 +22,7 @@ const TableView = ({
     return entry.valueBreakdown[selectedFrequency];
   };
 
-  const handleFrequencyChange = (newFrequency) => {
-    setSelectedFrequency(newFrequency);
-    onFrequencyChange?.(newFrequency);
-  };
-
-  const [sortConfig, setSortConfig] = useState({
+  const [sortConfig, setSortConfig] = React.useState({
     key: null,
     direction: 'desc'
   });
@@ -73,15 +66,6 @@ const TableView = ({
 
   return (
     <div className="w-full">
-      {/* View as: Frequency Selector */}
-      <div className="flex items-center mb-4">
-        <span className="text-gray-600 mr-2">View as:</span>
-        <FrequencySelector
-          value={selectedFrequency}
-          onChange={setSelectedFrequency}
-        />
-      </div>
-      
       {/* Table Header */}
       <div className="bg-gray-50 rounded-t-lg">
         <div className="grid grid-cols-2 py-3">
@@ -129,9 +113,16 @@ const TableView = ({
                 </button>
               </div>
             </div>
-          ))
-        )}
-      </div>
+    ))
+  )}
+</div>
+
+      {/* Original Value Note */}
+      {sortedEntries.some(entry => entry.frequency !== 'once') && (
+        <div className="mt-2 text-sm text-gray-500 italic">
+          * Values shown are converted to {selectedFrequency} amounts
+        </div>
+      )}
     </div>
   );
 };
@@ -153,7 +144,8 @@ TableView.propTypes = {
   onDelete: PropTypes.func.isRequired,
   showFrequency: PropTypes.bool,
   isIncome: PropTypes.bool,
-  categoryType: PropTypes.string
+  categoryType: PropTypes.string,
+  selectedFrequency: PropTypes.oneOf(['weekly', 'fortnightly', 'monthly'])
 };
 
 export default TableView;
