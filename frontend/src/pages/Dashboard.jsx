@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-import CategoryCard from '../../components/CategoryCard';
-import TableView from '../../components/TableView';
-import SettingsModal from '../../components/SettingsModal';
-import { scenarioStorage } from '../../services/scenarioStorage';
-import ScenarioModal from '../../components/ScenarioModal';
-import { convertAmount } from '../../utils/frequencyUtils';
+import CategoryCard from '../components/CategoryCard';
+import TableView from '../components/TableView';
+import SettingsModal from '../components/SettingsModal';
+import ScenarioModal from '../components/ScenarioModal';
 
 // Modal Component
 const Modal = ({ isOpen, onClose, children }) => {
@@ -38,7 +36,6 @@ const EntryForm = ({ category, onSubmit, onClose }) => {
     e.preventDefault();
     const numericValue = parseFloat(entry.value);
     
-    // Calculate values based on frequency
     let finalValue = numericValue;
     if (entry.frequency === 'weekly') {
       finalValue = numericValue * 52 / 12;
@@ -124,9 +121,6 @@ const EntryForm = ({ category, onSubmit, onClose }) => {
   );
 };
 const Dashboard = () => {
-  // Add frequency state
-  const [selectedFrequency, setSelectedFrequency] = useState('monthly');
-
   // Load initial state from localStorage
   const loadFromStorage = (key, defaultValue) => {
     const stored = localStorage.getItem(key);
@@ -197,23 +191,39 @@ const Dashboard = () => {
     }));
   };
 
+  // Reset function
+  const handleReset = () => {
+    setEntries({
+      income: [],
+      savings: [],
+      fundamental: [],
+      enjoyment: []
+    });
+    setTargetPercentages({
+      savings: 15,
+      fundamental: 65,
+      enjoyment: 20
+    });
+  };
+
+  // New scenario function
+  const handleNewScenario = () => {
+    if (window.confirm('Start a new scenario? This will clear all current entries.')) {
+      handleReset();
+    }
+  };
+
   // Scenario management functions
-  const handleSaveScenario = async (name) => {
-    const scenarioData = {
+  const handleSaveScenario = async () => {
+    return {
       entries,
       targetPercentages
     };
-    await scenarioStorage.saveScenario(name, scenarioData);
   };
 
-  const handleLoadScenario = async (id) => {
-    const scenario = scenarioStorage.loadScenario(id);
-    setEntries(scenario.data.entries);
-    setTargetPercentages(scenario.data.targetPercentages);
-  };
-
-  const handleDeleteScenario = async (id) => {
-    await scenarioStorage.deleteScenario(id);
+  const handleLoadScenario = (scenarioData) => {
+    setEntries(scenarioData.entries);
+    setTargetPercentages(scenarioData.targetPercentages);
   };
 
   // Effects
@@ -241,12 +251,6 @@ const Dashboard = () => {
     return ((totals[category] / totals.income) * 100).toFixed(1);
   };
 
-  const getVariance = (category) => {
-    const actual = parseFloat(getPercentage(category));
-    const target = targetPercentages[category];
-    return (actual - target).toFixed(1);
-  };
-
   const getTargetAmount = (category) => {
     return (totals.income * (targetPercentages[category] / 100)).toFixed(2);
   };
@@ -271,6 +275,12 @@ const Dashboard = () => {
         <h1 className="text-3xl font-bold">Manage Our Money</h1>
         <div className="space-x-2">
           <button
+            onClick={handleNewScenario}
+            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+          >
+            New Scenario
+          </button>
+          <button
             onClick={() => setScenarioModalOpen(true)}
             className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600"
           >
@@ -289,49 +299,24 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Income Section */}
         <div className="bg-white rounded-lg p-6">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex justify-between items-start mb-4">
             <div>
               <h2 className="text-xl font-bold">Income</h2>
               <p className="text-2xl font-bold mt-2">
-                {formatCurrency(convertAmount(totals.income, 'monthly', selectedFrequency))}
+                {formatCurrency(totals.income)}
               </p>
             </div>
-            <div className="flex items-center space-x-2">
-              <select
-                value={selectedFrequency}
-                onChange={(e) => setSelectedFrequency(e.target.value)}
-                className="border border-gray-300 rounded-md shadow-sm p-2 text-sm"
-              >
-                <option value="weekly">Weekly</option>
-                <option value="fortnightly">Fortnightly</option>
-                <option value="monthly">Monthly</option>
-              </select>
-              <button
-                onClick={() => openModal('income')}
-                className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600"
-              >
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  width="20" 
-                  height="20" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  strokeWidth="2" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                >
-                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-              </button>
-            </div>
+            <button
+              onClick={() => openModal('income')}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            >
+              Add Income
+            </button>
           </div>
           <TableView
             entries={entries.income}
             onDelete={(id) => deleteEntry('income', id)}
             isIncome={true}
-            selectedFrequency={selectedFrequency}
           />
         </div>
 
@@ -375,7 +360,6 @@ const Dashboard = () => {
           onDeleteEntry={(id) => deleteEntry('savings', id)}
           currentPercentage={parseFloat(getPercentage('savings'))}
           variance={parseFloat(getDollarVariance('savings'))}
-          selectedFrequency={selectedFrequency}
         />
 
         {/* Fundamental Category */}
@@ -389,7 +373,6 @@ const Dashboard = () => {
           onDeleteEntry={(id) => deleteEntry('fundamental', id)}
           currentPercentage={parseFloat(getPercentage('fundamental'))}
           variance={parseFloat(getDollarVariance('fundamental'))}
-          selectedFrequency={selectedFrequency}
         />
 
         {/* Enjoyment Category */}
@@ -403,7 +386,6 @@ const Dashboard = () => {
           onDeleteEntry={(id) => deleteEntry('enjoyment', id)}
           currentPercentage={parseFloat(getPercentage('enjoyment'))}
           variance={parseFloat(getDollarVariance('enjoyment'))}
-          selectedFrequency={selectedFrequency}
         />
       </div>
 
@@ -413,6 +395,7 @@ const Dashboard = () => {
         onClose={() => setSettingsModalOpen(false)}
         targetPercentages={targetPercentages}
         onSave={setTargetPercentages}
+        onReset={handleReset}
       />
 
       <ScenarioModal
@@ -420,7 +403,6 @@ const Dashboard = () => {
         onClose={() => setScenarioModalOpen(false)}
         onSave={handleSaveScenario}
         onLoad={handleLoadScenario}
-        onDelete={handleDeleteScenario}
       />
 
       <Modal isOpen={modalState.isOpen} onClose={closeModal}>
