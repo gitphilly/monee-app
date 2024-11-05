@@ -5,6 +5,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    container_name: monee-app-frontend
     ports:
       - "3000:80"
     depends_on:
@@ -16,6 +17,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    container_name: monee-app-backend
     ports:
       - "3001:3001"
     environment:
@@ -26,12 +28,13 @@ services:
       - JWT_SECRET=your-secret-key-change-this
     depends_on:
       db:
-        condition: service_healthy  # Add this line
+        condition: service_healthy
     networks:
       - app-network
 
   db:
     image: postgres:14-alpine
+    container_name: monee-app-db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -42,7 +45,7 @@ services:
       - "5432:5432"
     networks:
       - app-network
-    healthcheck:       # Add this healthcheck section
+    healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
