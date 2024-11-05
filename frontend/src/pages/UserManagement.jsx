@@ -9,6 +9,7 @@ const UserManagement = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(null); // For tracking which user is being updated
 
   // Fetch users on component mount
   useEffect(() => {
@@ -40,8 +41,6 @@ const UserManagement = () => {
   const handleAddUser = async (e) => {
     e.preventDefault();
     try {
-      console.log('Attempting to create user:', newUser); // Debug log
-
       const response = await fetch('/api/users', {
         method: 'POST',
         headers: {
@@ -51,15 +50,10 @@ const UserManagement = () => {
         body: JSON.stringify(newUser)
       });
 
-      console.log('Response status:', response.status); // Debug log
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to create user');
       }
-
-      const createdUser = await response.json();
-      console.log('User created:', createdUser); // Debug log
 
       await fetchUsers(); // Refresh the users list
       setNewUser({ username: '', password: '', role: 'user' });
@@ -94,6 +88,7 @@ const UserManagement = () => {
 
   const handleUpdatePassword = async (userId, newPassword) => {
     try {
+      setUpdating(userId);
       const response = await fetch(`/api/users/${userId}/password`, {
         method: 'PUT',
         headers: {
@@ -108,9 +103,12 @@ const UserManagement = () => {
       }
 
       setError('');
+      alert('Password updated successfully');
     } catch (err) {
       console.error('Error updating password:', err);
       setError('Failed to update password');
+    } finally {
+      setUpdating(null);
     }
   };
 
@@ -217,17 +215,32 @@ const UserManagement = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <input
-                        type="password"
-                        placeholder="New password"
-                        className="border border-gray-300 rounded px-2 py-1 text-sm mr-2"
-                        onChange={(e) => {
-                          const newPassword = e.target.value;
-                          if (newPassword) {
-                            handleUpdatePassword(user.id, newPassword);
-                          }
-                        }}
-                      />
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="password"
+                          placeholder="New password"
+                          className="border border-gray-300 rounded px-2 py-1 text-sm"
+                          data-user-id={user.id}
+                          onChange={(e) => {
+                            user.tempPassword = e.target.value;
+                          }}
+                        />
+                        <button
+                          onClick={() => {
+                            if (user.tempPassword) {
+                              handleUpdatePassword(user.id, user.tempPassword);
+                              delete user.tempPassword;
+                              // Clear the input
+                              const input = document.querySelector(`input[data-user-id="${user.id}"]`);
+                              if (input) input.value = '';
+                            }
+                          }}
+                          className="text-green-600 hover:text-green-900 text-sm px-2 py-1 bg-green-50 rounded"
+                          disabled={updating === user.id}
+                        >
+                          {updating === user.id ? 'Saving...' : 'Save'}
+                        </button>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
